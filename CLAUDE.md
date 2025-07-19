@@ -40,12 +40,37 @@ source .venv/bin/activate
 
 ### Instaliranje zavisnosti
 ```bash
-pip install httpx fastapi uvicorn
+pip install -r requirements.txt
+```
+
+### Environment Configuration
+```bash
+# Copy environment template and configure
+cp .env.example .env
+
+# Edit .env file with your database credentials
+# DATABASE_URL=postgresql://username:password@localhost:5432/receipt_processor
+```
+
+### Database Setup
+```bash
+# Install PostgreSQL and create database
+createdb receipt_processor
+
+# Setup database tables (reads from .env)
+python database_config.py
 ```
 
 ### Pokretanje servera
 ```bash
-uvicorn main:app --reload
+# Setup database (first time only)
+python database_config.py
+
+# Pokreni API
+python src/main.py
+
+# Ili koristi uvicorn direktno
+uvicorn src.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
 ## Važne napomene

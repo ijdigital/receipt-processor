@@ -1,6 +1,6 @@
-  curl -X POST http://127.0.0.1:8000/api/receipt \
+time  curl -X POST http://127.0.0.1:8000/api/receipt \
     -H "Content-Type: application/json" \
     -H "x-api-key: cbd28701-1148-4853-bcd1-0d807ee96764" \
     -d '{
       "url": "https://suf.purs.gov.rs/v/?vl=A0dMN1hUNjNOR0w3WFQ2M066LwAAbiwAAAwkTwgAAAAAAAABmBxSTwgAAAwxMDoxMDkyNjI5NzJ9ge8%2BdWX2LERh8fQ2E4ng9q0yXzCzGi%2Bz0Dl3F%2BmXjsatfZHjPSa8q2agv2MD%2BL2JkxoUHtqC6xx0L5VdsEt6ZbzlOc%2B0Nyap9tUnnyEogRlJoHw88lAIOlBvtHxUciTZ4CU7mvhcAc4HbaDIx%2BDZpfYGJO3qshNnT5%2BkK6Scw01Li%2BPuqR4m6QRmpPY4%2Bi7kwQ9pH8%2B2xTCi%2BPdXQ9u1riLDW3DToNvIKEfUsA1iASQHEFf%2BVK%2F4yGYx2efhTSqsUwLxmFnwyaRRp7h8W%2F2GdlblLSEkv%2FvYUpBPfXWUBgF%2FjYLHxgbX9q1JZzMokfFvPWPHuLnJj0oNdgaC15sNUjpbQy5Qpxzl1gX7tmoi8dotGNBdDjOyORZjsS0da%2BLpWC6NMgknlY5OR6UNums9oPj6wdVwGLDBbufwinSdcJXSHFuHE%2F01pTJR%2F6uKuYxg3J4c78k%2BZOC%2B59%2BB%2FXEDicIWDFYhuuR%2FpivPeYaGvyooTuteQTzw9zuXGuUxMqM4EkMmSsPUPvB%2BITKGSnRhHId0REWITTRMun1sJBw%2FVbfaVUzAcTkmnnJ12HSQskcJh3CEHz5stextmQ7jT%2Bi8hfXCnWGBnyDMC3ZEtTUuCuBk8pDW7fpnP6YD87hO4aHeEEACw%2BMj9WSXfyNkuDSofRIQKRaRMASiniVUiAo%2FW%2BI5SylFpvvWQ3hD4Ld1lzk%3D"
-    }'
+    }' | jq

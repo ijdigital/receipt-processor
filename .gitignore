@@ -39,8 +39,25 @@ Thumbs.db
 
 # Logs
 *.log
+logs/
+
+# Cache
+cache/
+__pycache__/
+.pytest_cache/
 
 # Environment variables
 .env
 .env.local
 .env.*.local
+
+# Database
+*.db
+*.sqlite3
+
+# Coverage
+.coverage
+htmlcov/
+
+# Jupyter
+.ipynb_checkpoints/
