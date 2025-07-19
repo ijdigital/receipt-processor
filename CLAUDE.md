@@ -4,7 +4,13 @@ Ovaj fajl pruža uputstva za Claude Code (claude.ai/code) prilikom rada sa kodom
 
 ## Jezička pravila
 
-**SVA KOMUNIKACIJA SE VODI NA SRPSKOM JEZIKU** - Claude treba uvek da odgovara na srpskom jeziku, a svi MD fajlovi sa pravilima treba da budu na srpskom.
+**KOMUNIKACIJA** - Claude treba uvek da odgovara na srpskom jeziku, a svi MD fajlovi sa pravilima treba da budu na srpskom.
+
+**KOD I DOKUMENTACIJA** - Svi elementi koda koriste engleski jezik:
+- Git commit poruke su na engleskom
+- Komentari u programima i testovima su na engleskom  
+- Imena funkcija, klasa, varijabli su na engleskom
+- Samo konverzacija između Claude-a i korisnika je na srpskom
 
 ## Pregled repozitorijuma
 
