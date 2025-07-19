@@ -5,8 +5,9 @@ import logging
 import re
 import hashlib
 import os
+import json
 from pathlib import Path
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Tuple
 from bs4 import BeautifulSoup
 import httpx
 from unidecode import unidecode
@@ -300,6 +301,105 @@ def extract_rezultat_fiskalizacije(soup: BeautifulSoup) -> Dict[str, Any]:
         return {}
 
 
+def extract_invoice_params(soup: BeautifulSoup) -> Optional[Tuple[str, str]]:
+    """Extract invoiceNumber and token from HTML for specification API call"""
+    try:
+        # Look for JavaScript or hidden form data containing invoiceNumber and token
+        scripts = soup.find_all('script')
+        
+        invoice_number = None
+        token = None
+        
+        for script in scripts:
+            script_text = script.get_text() if script.string else ""
+            
+            # Look for invoiceNumber pattern - updated to match viewModel calls
+            invoice_match = re.search(r'InvoiceNumber\([\'"]([^\'"]+)[\'"]\)', script_text)
+            if not invoice_match:
+                invoice_match = re.search(r'invoiceNumber["\s]*[:=]["\s]*([^"&\s]+)', script_text)
+            if invoice_match:
+                invoice_number = invoice_match.group(1)
+            
+            # Look for token pattern - updated to match viewModel calls 
+            token_match = re.search(r'Token\([\'"]([a-f0-9-]{36})[\'"]\)', script_text)
+            if not token_match:
+                token_match = re.search(r'token["\s]*[:=]["\s]*([a-f0-9-]{36})', script_text)
+            if token_match:
+                token = token_match.group(1)
+        
+        # Also check for data attributes or hidden inputs
+        if not invoice_number or not token:
+            # Check for data attributes
+            for element in soup.find_all(['div', 'input', 'span'], attrs={'data-invoice': True}):
+                if element.get('data-invoice'):
+                    invoice_number = element.get('data-invoice')
+            
+            for element in soup.find_all(['div', 'input', 'span'], attrs={'data-token': True}):
+                if element.get('data-token'):
+                    token = element.get('data-token')
+        
+        if invoice_number and token:
+            logger.info(f"Extracted invoice params: {invoice_number[:10]}..., token: {token[:8]}...")
+            return (invoice_number, token)
+        else:
+            logger.warning(f"Could not extract invoice parameters. Found invoice: {bool(invoice_number)}, token: {bool(token)}")
+            return None
+            
+    except Exception as e:
+        logger.error(f"Error extracting invoice parameters: {e}")
+        return None
+
+
+async def fetch_specification_data(invoice_number: str, token: str) -> Optional[Dict[str, Any]]:
+    """Fetch specification data from API"""
+    try:
+        spec_url = "https://suf.purs.gov.rs/specifications"
+        
+        # Check cache first
+        cache_key = f"{spec_url}?invoiceNumber={invoice_number}&token={token}"
+        cached_content = read_from_cache(cache_key)
+        if cached_content:
+            return json.loads(cached_content)
+        
+        payload = {
+            "invoiceNumber": invoice_number,
+            "token": token
+        }
+        
+        logger.info(f"Fetching specification data for invoice: {invoice_number[:10]}...")
+        
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(
+                spec_url,
+                data=payload,
+                headers={
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Referer': 'https://suf.purs.gov.rs/v/',
+                    'Accept': 'application/json, text/javascript, */*; q=0.01',
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'
+                }
+            )
+            response.raise_for_status()
+            
+            # Cache the response
+            write_to_cache(cache_key, response.text, "application/json")
+            
+            spec_data = response.json()
+            logger.info(f"Specification API response: success={spec_data.get('success')}, items={len(spec_data.get('items', []))}")
+            if not spec_data.get('success'):
+                logger.warning(f"Specification API returned success=false: {spec_data}")
+                return None  # Return None if API call failed
+            return spec_data
+            
+    except httpx.HTTPStatusError as e:
+        logger.error(f"HTTP error fetching specification: {e.response.status_code}")
+        return None
+    except Exception as e:
+        logger.error(f"Error fetching specification data: {e}")
+        return None
+
+
 async def scrape_receipt_data(url: str) -> Dict[str, Any]:
     """Main function to scrape all receipt data"""
     try:
@@ -316,10 +416,20 @@ async def scrape_receipt_data(url: str) -> Dict[str, Any]:
         zahtev_za_fiskalizaciju_racuna = extract_zahtev_fiskalizacija(soup)
         rezultat_fiskalizacije_racuna = extract_rezultat_fiskalizacije(soup)
         
+        # Try to extract specification data
+        specifikacija_racuna = None
+        invoice_params = extract_invoice_params(soup)
+        if invoice_params:
+            invoice_number, token = invoice_params
+            spec_data = await fetch_specification_data(invoice_number, token)
+            if spec_data:
+                specifikacija_racuna = spec_data
+        
         result = {
             "status_racuna": status_racuna,
             "zahtev_za_fiskalizaciju_racuna": zahtev_za_fiskalizaciju_racuna,
-            "rezultat_fiskalizacije_racuna": rezultat_fiskalizacije_racuna
+            "rezultat_fiskalizacije_racuna": rezultat_fiskalizacije_racuna,
+            "specifikacija_racuna": specifikacija_racuna
         }
         
         logger.info("Receipt scraping completed successfully")

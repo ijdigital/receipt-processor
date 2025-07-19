@@ -2,7 +2,7 @@
 Pydantic models for API
 """
 from pydantic import BaseModel, Field, validator
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from datetime import datetime
 import re
 
@@ -35,11 +35,34 @@ class ReceiptRequest(BaseModel):
         return v
 
 
+class SpecificationItem(BaseModel):
+    """Model for individual specification item"""
+    gtin: str = Field("", description="GTIN code")
+    name: str = Field(..., description="Item name")
+    quantity: float = Field(..., description="Item quantity")
+    total: float = Field(..., description="Total amount")
+    unit_price: float = Field(..., description="Unit price", alias="unitPrice")
+    label: str = Field("", description="Tax label")
+    label_rate: float = Field(0, description="Tax rate", alias="labelRate")
+    tax_base_amount: float = Field(0, description="Tax base amount", alias="taxBaseAmount")
+    vat_amount: float = Field(0, description="VAT amount", alias="vatAmount")
+
+    class Config:
+        allow_population_by_field_name = True
+
+
+class SpecificationData(BaseModel):
+    """Model for specification data"""
+    success: bool = Field(True, description="Success status")
+    items: List[SpecificationItem] = Field([], description="List of receipt items")
+
+
 class ReceiptData(BaseModel):
     """Model for scraped receipt data"""
     status_racuna: Dict[str, Any] = Field(..., description="Receipt status section")
     zahtev_za_fiskalizaciju_racuna: Dict[str, Any] = Field(..., description="Fiscalization request section")
     rezultat_fiskalizacije_racuna: Dict[str, Any] = Field(..., description="Fiscalization result section")
+    specifikacija_racuna: Optional[SpecificationData] = Field(None, description="Receipt specification section")
 
 
 class ReceiptResponse(BaseModel):
