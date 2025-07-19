@@ -254,7 +254,7 @@ async def http_exception_handler(request, exc):
     )
 
 
-@app.get("/receipts")
+@app.get("/api/receipts")
 async def get_receipts(
     limit: int = 100,
     api_key: str = Depends(get_api_key)
@@ -276,7 +276,7 @@ async def get_receipts(
         )
 
 
-@app.get("/receipts/{receipt_id}")
+@app.get("/api/receipts/{receipt_id}")
 async def get_receipt(
     receipt_id: str,
     include_items: bool = True,
@@ -318,7 +318,7 @@ async def get_receipt(
         )
 
 
-@app.get("/receipts/{receipt_id}/items")
+@app.get("/api/receipts/{receipt_id}/items")
 async def get_receipt_items(
     receipt_id: str,
     api_key: str = Depends(get_api_key)
@@ -360,7 +360,7 @@ async def get_receipt_items(
         )
 
 
-@app.get("/health")
+@app.get("/api/health")
 async def health_check():
     """Health check endpoint"""
     return {"status": "healthy", "timestamp": datetime.now().isoformat()}

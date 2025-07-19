@@ -197,9 +197,9 @@ class DatabaseConnection:
                     # Convert UUID and datetime objects to strings for JSON serialization
                     result['id'] = str(result['id'])
                     result['x_api_key'] = str(result['x_api_key'])
-                    if result['created_at']:
+                    if result['created_at'] and hasattr(result['created_at'], 'isoformat'):
                         result['created_at'] = result['created_at'].isoformat()
-                    if result['processed_at']:
+                    if result['processed_at'] and hasattr(result['processed_at'], 'isoformat'):
                         result['processed_at'] = result['processed_at'].isoformat()
                     
                 return result
@@ -231,9 +231,9 @@ class DatabaseConnection:
                 for result in results:
                     result['id'] = str(result['id'])
                     result['x_api_key'] = str(result['x_api_key'])
-                    if result['created_at']:
+                    if result['created_at'] and hasattr(result['created_at'], 'isoformat'):
                         result['created_at'] = result['created_at'].isoformat()
-                    if result['processed_at']:
+                    if result['processed_at'] and hasattr(result['processed_at'], 'isoformat'):
                         result['processed_at'] = result['processed_at'].isoformat()
                 
                 return results
@@ -263,7 +263,7 @@ class DatabaseConnection:
                 for result in results:
                     result['id'] = str(result['id'])
                     result['receipt_id'] = str(result['receipt_id'])
-                    if result['created_at']:
+                    if result['created_at'] and hasattr(result['created_at'], 'isoformat'):
                         result['created_at'] = result['created_at'].isoformat()
                 
                 return results

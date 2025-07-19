@@ -1,4 +1,4 @@
-time  curl -X POST http://127.0.0.1:8000/api/receipt \
+time  curl -X POST http://127.0.0.1/api/receipt \
     -H "Content-Type: application/json" \
     -H "x-api-key: cbd28701-1148-4853-bcd1-0d807ee96764" \
     -d '{

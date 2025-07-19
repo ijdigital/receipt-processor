@@ -48,9 +48,10 @@ requirements.txt    # Python dependencies
 
 ### API Endpoints:
 - `POST /api/receipt` - Obradi receipt URL i vrati strukturirane podatke
-- `GET /receipts` - Lista svih računa za API key
-- `GET /receipts/{id}` - Detalji specifičnog računa
-- `GET /health` - Health check
+- `GET /api/receipts` - Lista svih računa za API key
+- `GET /api/receipts/{id}` - Detalji specifičnog računa
+- `GET /api/receipts/{id}/items` - Lista svih stavki za račun
+- `GET /api/health` - Health check
 - `GET /` - API info
 
 ### Data Flow:

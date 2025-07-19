@@ -252,12 +252,13 @@ class TestDatabaseConnection:
     async def test_get_receipts_by_api_key_success(self, db_connection):
         """Test successful receipts retrieval by API key"""
         api_key = str(uuid.uuid4())
+        processed_at = datetime.now()
         expected_receipts = [
             {
                 'id': str(uuid.uuid4()),
                 'x_api_key': api_key,
                 'created_at': datetime.now(),
-                'processed_at': datetime.now(),
+                'processed_at': processed_at.isoformat(),  # Already converted to string like real DB
                 'pib': '123456789'
             }
         ]
@@ -273,7 +274,7 @@ class TestDatabaseConnection:
             
             assert len(result) == len(expected_receipts)
             assert result[0]['x_api_key'] == str(expected_receipts[0]['x_api_key'])
-            assert result[0]['processed_at'] == expected_receipts[0]['processed_at'].isoformat()
+            assert result[0]['processed_at'] == expected_receipts[0]['processed_at']
             mock_connect.assert_called_once()
             mock_conn.execute.assert_called_once()
             mock_cursor.fetchall.assert_called_once()
