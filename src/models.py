@@ -41,14 +41,11 @@ class SpecificationItem(BaseModel):
     name: str = Field(..., description="Item name")
     quantity: float = Field(..., description="Item quantity")
     total: float = Field(..., description="Total amount")
-    unit_price: float = Field(..., description="Unit price", alias="unitPrice")
+    unit_price: float = Field(..., description="Unit price")
     label: str = Field("", description="Tax label")
-    label_rate: float = Field(0, description="Tax rate", alias="labelRate")
-    tax_base_amount: float = Field(0, description="Tax base amount", alias="taxBaseAmount")
-    vat_amount: float = Field(0, description="VAT amount", alias="vatAmount")
-
-    class Config:
-        allow_population_by_field_name = True
+    label_rate: float = Field(0, description="Tax rate")
+    tax_base_amount: float = Field(0, description="Tax base amount")
+    vat_amount: float = Field(0, description="VAT amount")
 
 
 class SpecificationData(BaseModel):

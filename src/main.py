@@ -188,6 +188,13 @@ async def process_receipt(
                 }
             )
             logger.info(f"Receipt saved to database with ID: {receipt_id}")
+            
+            # Save items to database
+            specifikacija = scraped_data.get("specifikacija_racuna")
+            if specifikacija and specifikacija.get("items"):
+                items_count = await db.insert_items(receipt_id, specifikacija["items"])
+                logger.info(f"Saved {items_count} items to database")
+            
         except Exception as db_error:
             logger.warning(f"Failed to save to database: {db_error}")
             # Continue without database
@@ -272,12 +279,17 @@ async def get_receipts(
 @app.get("/receipts/{receipt_id}")
 async def get_receipt(
     receipt_id: str,
+    include_items: bool = True,
     api_key: str = Depends(get_api_key)
 ):
-    """Get a specific receipt by ID"""
+    """Get a specific receipt by ID with optional items"""
     try:
         db = get_database()
-        receipt = await db.get_receipt(receipt_id)
+        
+        if include_items:
+            receipt = await db.get_receipt_with_items(receipt_id)
+        else:
+            receipt = await db.get_receipt(receipt_id)
         
         if not receipt:
             raise HTTPException(
@@ -303,6 +315,48 @@ async def get_receipt(
         raise HTTPException(
             status_code=500,
             detail=f"Error getting receipt: {str(e)}"
+        )
+
+
+@app.get("/receipts/{receipt_id}/items")
+async def get_receipt_items(
+    receipt_id: str,
+    api_key: str = Depends(get_api_key)
+):
+    """Get all items for a specific receipt"""
+    try:
+        db = get_database()
+        
+        # First check if receipt exists and belongs to user
+        receipt = await db.get_receipt(receipt_id)
+        if not receipt:
+            raise HTTPException(
+                status_code=404,
+                detail="Receipt not found"
+            )
+        
+        if receipt['x_api_key'] != api_key:
+            raise HTTPException(
+                status_code=403,
+                detail="Access denied to this receipt"
+            )
+        
+        # Get items
+        items = await db.get_receipt_items(receipt_id)
+        
+        return {
+            "status": "success",
+            "receipt_id": receipt_id,
+            "count": len(items),
+            "items": items
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error getting items for receipt {receipt_id}: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error getting receipt items: {str(e)}"
         )
 
 

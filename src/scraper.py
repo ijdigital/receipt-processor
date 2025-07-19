@@ -364,11 +364,11 @@ def extract_journal_specification(soup: BeautifulSoup) -> Optional[Dict[str, Any
                     "name": name,
                     "quantity": quantity,
                     "total": total,
-                    "unitPrice": unit_price,
+                    "unit_price": unit_price,
                     "label": tax_label,
-                    "labelRate": label_rate,
-                    "taxBaseAmount": round(tax_base_amount, 2),
-                    "vatAmount": round(vat_amount, 2)
+                    "label_rate": label_rate,
+                    "tax_base_amount": round(tax_base_amount, 2),
+                    "vat_amount": round(vat_amount, 2)
                 }
                 items.append(item)
                 

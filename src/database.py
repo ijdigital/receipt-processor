@@ -36,7 +36,7 @@ class DatabaseConnection:
             raise
     
     async def create_tables(self):
-        """Create receipts table if it doesn't exist"""
+        """Create receipts and items tables if they don't exist"""
         create_table_sql = """
         CREATE TABLE IF NOT EXISTS receipts (
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -54,9 +54,27 @@ class DatabaseConnection:
             source JSONB NOT NULL
         );
         
+        CREATE TABLE IF NOT EXISTS items (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            receipt_id UUID NOT NULL REFERENCES receipts(id) ON DELETE CASCADE,
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            gtin VARCHAR(100),
+            name TEXT NOT NULL,
+            quantity DECIMAL(10,3) NOT NULL,
+            total DECIMAL(15,2) NOT NULL,
+            unit_price DECIMAL(15,2) NOT NULL,
+            label VARCHAR(10),
+            label_rate DECIMAL(5,2),
+            tax_base_amount DECIMAL(15,2),
+            vat_amount DECIMAL(15,2)
+        );
+        
         CREATE INDEX IF NOT EXISTS idx_receipts_created_at ON receipts(created_at);
         CREATE INDEX IF NOT EXISTS idx_receipts_x_api_key ON receipts(x_api_key);
         CREATE INDEX IF NOT EXISTS idx_receipts_pib ON receipts(pib);
+        CREATE INDEX IF NOT EXISTS idx_items_receipt_id ON items(receipt_id);
+        CREATE INDEX IF NOT EXISTS idx_items_name ON items(name);
+        CREATE INDEX IF NOT EXISTS idx_items_label ON items(label);
         """
         
         try:
@@ -114,6 +132,48 @@ class DatabaseConnection:
                 
         except Exception as e:
             logger.error(f"Error inserting receipt: {e}")
+            raise
+    
+    async def insert_items(self, receipt_id: str, items: list[Dict[str, Any]]) -> int:
+        """Insert receipt items and return count of inserted items"""
+        if not items:
+            return 0
+        
+        insert_sql = """
+        INSERT INTO items (
+            receipt_id, gtin, name, quantity, total, unit_price,
+            label, label_rate, tax_base_amount, vat_amount
+        ) VALUES (
+            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+        );
+        """
+        
+        try:
+            conn = await psycopg.AsyncConnection.connect(self.connection_string)
+            async with conn:
+                for item in items:
+                    await conn.execute(
+                        insert_sql,
+                        (
+                            receipt_id,
+                            item.get("gtin", ""),
+                            item.get("name", ""),
+                            item.get("quantity", 0),
+                            item.get("total", 0),
+                            item.get("unit_price", 0),
+                            item.get("label", ""),
+                            item.get("label_rate", 0),
+                            item.get("tax_base_amount", 0),
+                            item.get("vat_amount", 0)
+                        )
+                    )
+                await conn.commit()
+                
+                logger.info(f"Inserted {len(items)} items for receipt {receipt_id}")
+                return len(items)
+                
+        except Exception as e:
+            logger.error(f"Error inserting items for receipt {receipt_id}: {e}")
             raise
     
     async def get_receipt(self, receipt_id: str) -> Optional[Dict[str, Any]]:
@@ -181,6 +241,47 @@ class DatabaseConnection:
         except Exception as e:
             logger.error(f"Error getting receipts for API key {x_api_key}: {e}")
             raise
+    
+    async def get_receipt_items(self, receipt_id: str) -> list[Dict[str, Any]]:
+        """Get all items for a specific receipt"""
+        
+        select_sql = """
+        SELECT id, receipt_id, created_at, gtin, name, quantity, total,
+               unit_price, label, label_rate, tax_base_amount, vat_amount
+        FROM items 
+        WHERE receipt_id = %s
+        ORDER BY created_at;
+        """
+        
+        try:
+            conn = await psycopg.AsyncConnection.connect(self.connection_string, row_factory=dict_row)
+            async with conn:
+                cursor = await conn.execute(select_sql, (receipt_id,))
+                results = await cursor.fetchall()
+                
+                # Convert UUID and datetime objects to strings
+                for result in results:
+                    result['id'] = str(result['id'])
+                    result['receipt_id'] = str(result['receipt_id'])
+                    if result['created_at']:
+                        result['created_at'] = result['created_at'].isoformat()
+                
+                return results
+                
+        except Exception as e:
+            logger.error(f"Error getting items for receipt {receipt_id}: {e}")
+            raise
+    
+    async def get_receipt_with_items(self, receipt_id: str) -> Optional[Dict[str, Any]]:
+        """Get receipt with all its items"""
+        receipt = await self.get_receipt(receipt_id)
+        if not receipt:
+            return None
+        
+        items = await self.get_receipt_items(receipt_id)
+        receipt['items'] = items
+        
+        return receipt
 
 
 # Global database instance

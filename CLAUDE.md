@@ -128,7 +128,8 @@ uvicorn src.main:app --host 127.0.0.1 --port 8000 --reload
 ### TDD Pristup
 - **UVEK** koristi Test-Driven Development
 - Piši testove pre implementacije funkcionalnosti
-- Pokreni testove sa: `pytest tests/ -v`
+- **VAŽNO**: Koristi pytest iz venv-a: `.venv/bin/pytest tests/ -v`
+- Aktiviraj venv ili pozovi direktno `.venv/bin/python`, `.venv/bin/pip`, itd.
 
 ### Commit standardi
 - Commit poruke na engleskom
