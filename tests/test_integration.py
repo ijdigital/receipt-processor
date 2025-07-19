@@ -15,13 +15,17 @@ class TestReceiptIntegration:
     @pytest.fixture
     def real_receipt_url_1(self):
         """Real receipt URL from url1.txt"""
-        with open("url1.txt", "r") as f:
+        from pathlib import Path
+        assets_path = Path(__file__).parent / "assets" / "url1.txt"
+        with open(assets_path, "r") as f:
             return f.read().strip()
     
     @pytest.fixture
     def real_receipt_url_2(self):
         """Real receipt URL from url2.txt"""
-        with open("url2.txt", "r") as f:
+        from pathlib import Path
+        assets_path = Path(__file__).parent / "assets" / "url2.txt"
+        with open(assets_path, "r") as f:
             return f.read().strip()
     
     @pytest.fixture
