@@ -2,7 +2,7 @@
 Pydantic models for API
 """
 from pydantic import BaseModel, Field, validator
-from typing import Optional
+from typing import Optional, Dict, Any
 from datetime import datetime
 import re
 
@@ -35,12 +35,20 @@ class ReceiptRequest(BaseModel):
         return v
 
 
+class ReceiptData(BaseModel):
+    """Model for scraped receipt data"""
+    status_racuna: Dict[str, Any] = Field(..., description="Receipt status section")
+    zahtev_za_fiskalizaciju_racuna: Dict[str, Any] = Field(..., description="Fiscalization request section")
+    rezultat_fiskalizacije_racuna: Dict[str, Any] = Field(..., description="Fiscalization result section")
+
+
 class ReceiptResponse(BaseModel):
     """Model for API response"""
     status: str = Field(..., description="Processing status")
     url: str = Field(..., description="Processed URL")
     processed_at: str = Field(..., description="Processing time")
     message: Optional[str] = Field(None, description="Additional message")
+    data: Optional[ReceiptData] = Field(None, description="Scraped receipt data")
 
 
 class ErrorResponse(BaseModel):

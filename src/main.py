@@ -15,11 +15,13 @@ from pathlib import Path
 if __name__ == "__main__":
     project_root = Path(__file__).parent.parent
     sys.path.insert(0, str(project_root))
-    from src.models import ReceiptRequest, ReceiptResponse, ErrorResponse
+    from src.models import ReceiptRequest, ReceiptResponse, ErrorResponse, ReceiptData
     from src.auth import validate_api_key
+    from src.scraper import scrape_receipt_data
 else:
-    from .models import ReceiptRequest, ReceiptResponse, ErrorResponse
+    from .models import ReceiptRequest, ReceiptResponse, ErrorResponse, ReceiptData
     from .auth import validate_api_key
+    from .scraper import scrape_receipt_data
 
 # Load logging configuration
 def setup_logging():
@@ -115,24 +117,28 @@ async def process_receipt(
     try:
         logger.info(f"Processing receipt: {receipt_data.url[:50]}...")
         
-        # Currently just return successful response
-        # Here should be added logic for URL processing
+        # Scrape receipt data from the URL
+        scraped_data = await scrape_receipt_data(receipt_data.url)
+        
+        # Create ReceiptData object
+        receipt_data_obj = ReceiptData(**scraped_data)
         
         response = ReceiptResponse(
             status="success",
             url=receipt_data.url,
             processed_at=datetime.now().isoformat(),
-            message="Receipt processed successfully"
+            message="Receipt processed and scraped successfully",
+            data=receipt_data_obj
         )
         
-        logger.info(f"Successfully processed receipt with API key: {api_key[:8]}...")
+        logger.info(f"Successfully processed and scraped receipt with API key: {api_key[:8]}...")
         return response
         
     except Exception as e:
         logger.error(f"Error processing receipt: {e}")
         raise HTTPException(
             status_code=500,
-            detail="Error processing receipt"
+            detail=f"Error processing receipt: {str(e)}"
         )
 
 
