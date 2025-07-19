@@ -1,5 +1,5 @@
 """
-Glavna FastAPI aplikacija
+Main FastAPI application
 """
 import logging
 import logging.config
@@ -13,9 +13,9 @@ import os
 from .models import ReceiptRequest, ReceiptResponse, ErrorResponse
 from .auth import validate_api_key
 
-# Učitaj logging konfiguraciju
+# Load logging configuration
 def setup_logging():
-    """Podešava logging na osnovu logging.yaml fajla"""
+    """Set up logging based on logging.yaml file"""
     config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "logging.yaml")
     
     if os.path.exists(config_path):
@@ -25,40 +25,40 @@ def setup_logging():
     else:
         logging.basicConfig(level=logging.INFO)
 
-# Inicijalizuj logging
+# Initialize logging
 setup_logging()
 logger = logging.getLogger("receipt_processor.main")
 
-# Kreiraj FastAPI aplikaciju
+# Create FastAPI application
 app = FastAPI(
     title="Receipt Processor API",
-    description="API za obradu skeniranih računa iz mobilne aplikacije",
+    description="API for processing scanned receipts from mobile application",
     version="1.0.0"
 )
 
 
 @app.on_event("startup")
 async def startup_event():
-    """Event koji se izvršava pri pokretanju aplikacije"""
-    logger.info("Receipt Processor API je pokrenuta")
+    """Event executed on application startup"""
+    logger.info("Receipt Processor API started")
 
 
 @app.on_event("shutdown")
 async def shutdown_event():
-    """Event koji se izvršava pri gašenju aplikacije"""
-    logger.info("Receipt Processor API se gasi")
+    """Event executed on application shutdown"""
+    logger.info("Receipt Processor API shutting down")
 
 
 async def get_api_key(x_api_key: Optional[str] = Header(None)):
-    """Dependency za validaciju API ključa iz header-a"""
+    """Dependency for API key validation from header"""
     if not x_api_key:
-        logger.warning("Zahtev bez x-api-key header-a")
+        logger.warning("Request without x-api-key header")
         raise HTTPException(
             status_code=401,
-            detail="x-api-key header je obavezan"
+            detail="x-api-key header is required"
         )
     
-    # Validacija API ključa
+    # Validate API key
     await validate_api_key(x_api_key)
     return x_api_key
 
@@ -67,9 +67,9 @@ async def get_api_key(x_api_key: Optional[str] = Header(None)):
     "/api/receipt",
     response_model=ReceiptResponse,
     responses={
-        400: {"model": ErrorResponse, "description": "Nevaljan zahtev"},
-        401: {"model": ErrorResponse, "description": "Neautorizovan pristup"},
-        500: {"model": ErrorResponse, "description": "Greška servera"}
+        400: {"model": ErrorResponse, "description": "Bad request"},
+        401: {"model": ErrorResponse, "description": "Unauthorized access"},
+        500: {"model": ErrorResponse, "description": "Server error"}
     }
 )
 async def process_receipt(
@@ -77,38 +77,38 @@ async def process_receipt(
     api_key: str = Depends(get_api_key)
 ):
     """
-    Obrađuje skenirani račun iz mobilne aplikacije
+    Process scanned receipt from mobile application
     
-    - **url**: URL skeniranog računa sa suf.purs.gov.rs domena
+    - **url**: URL of scanned receipt from suf.purs.gov.rs domain
     """
     try:
-        logger.info(f"Obrađujem račun: {receipt_data.url[:50]}...")
+        logger.info(f"Processing receipt: {receipt_data.url[:50]}...")
         
-        # Trenutno samo vraćamo uspešan odgovor
-        # Ovde bi trebalo dodati logiku za obradu URL-a
+        # Currently just return successful response
+        # Here should be added logic for URL processing
         
         response = ReceiptResponse(
             status="success",
             url=receipt_data.url,
             processed_at=datetime.now().isoformat(),
-            message="Račun je uspešno obrađen"
+            message="Receipt processed successfully"
         )
         
-        logger.info(f"Uspešno obrađen račun sa API ključem: {api_key[:8]}...")
+        logger.info(f"Successfully processed receipt with API key: {api_key[:8]}...")
         return response
         
     except Exception as e:
-        logger.error(f"Greška pri obradi računa: {e}")
+        logger.error(f"Error processing receipt: {e}")
         raise HTTPException(
             status_code=500,
-            detail="Greška pri obradi računa"
+            detail="Error processing receipt"
         )
 
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request, exc):
-    """Handler za HTTP greške"""
-    logger.warning(f"HTTP greška {exc.status_code}: {exc.detail}")
+    """Handler for HTTP errors"""
+    logger.warning(f"HTTP error {exc.status_code}: {exc.detail}")
     return JSONResponse(
         status_code=exc.status_code,
         content={"detail": exc.detail}

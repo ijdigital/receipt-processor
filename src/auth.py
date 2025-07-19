@@ -1,5 +1,5 @@
 """
-Auth modul za validaciju API ključeva
+Auth module for API key validation
 """
 import logging
 from typing import List
@@ -10,47 +10,47 @@ logger = logging.getLogger("receipt_processor.auth")
 
 
 async def load_api_keys() -> List[str]:
-    """Učitava API ključeve iz keys.txt fajla"""
+    """Load API keys from keys.txt file"""
     try:
         keys_file_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "keys.txt")
         
         with open(keys_file_path, "r", encoding="utf-8") as file:
             keys = [line.strip() for line in file.readlines() if line.strip()]
         
-        logger.info(f"Učitano {len(keys)} API ključeva")
+        logger.info(f"Loaded {len(keys)} API keys")
         return keys
     
     except FileNotFoundError:
-        logger.error("keys.txt fajl nije pronađen")
+        logger.error("keys.txt file not found")
         raise HTTPException(
             status_code=500,
-            detail="Greška u konfiguraciji: keys.txt fajl nije pronađen"
+            detail="Configuration error: keys.txt file not found"
         )
     except Exception as e:
-        logger.error(f"Greška pri učitavanju API ključeva: {e}")
+        logger.error(f"Error loading API keys: {e}")
         raise HTTPException(
             status_code=500,
-            detail="Greška pri učitavanju API ključeva"
+            detail="Error loading API keys"
         )
 
 
 async def validate_api_key(api_key: str) -> bool:
-    """Validira API ključ"""
+    """Validate API key"""
     if not api_key:
-        logger.warning("Pokušaj pristupa bez API ključa")
+        logger.warning("Access attempt without API key")
         raise HTTPException(
             status_code=401,
-            detail="API ključ je obavezan"
+            detail="API key is required"
         )
     
     valid_keys = await load_api_keys()
     
     if api_key not in valid_keys:
-        logger.warning(f"Nevaljan API ključ: {api_key[:8]}...")
+        logger.warning(f"Invalid API key: {api_key[:8]}...")
         raise HTTPException(
             status_code=401,
-            detail="Nevaljan API ključ"
+            detail="Invalid API key"
         )
     
-    logger.info(f"Uspešna autentifikacija sa API ključem: {api_key[:8]}...")
+    logger.info(f"Successful authentication with API key: {api_key[:8]}...")
     return True

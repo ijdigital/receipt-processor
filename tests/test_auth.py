@@ -6,11 +6,11 @@ import os
 
 
 class TestAuthMiddleware:
-    """Test klasa za auth middleware funkcionalnost"""
+    """Test class for auth middleware functionality"""
     
     @pytest.fixture
     def valid_api_keys(self):
-        """Mock validnih API ključeva"""
+        """Mock valid API keys"""
         return [
             "cbd28701-1148-4853-bcd1-0d807ee96764",
             "32db2b75-9b9c-4136-8b8c-466571c1bb8c",
@@ -19,13 +19,13 @@ class TestAuthMiddleware:
     
     @pytest.fixture
     def mock_keys_file(self, valid_api_keys):
-        """Mock keys.txt fajla"""
+        """Mock keys.txt file"""
         keys_content = "\n".join(valid_api_keys)
         return mock_open(read_data=keys_content)
     
     @pytest.mark.asyncio
     async def test_valid_api_key_should_pass(self, valid_api_keys, mock_keys_file):
-        """Test da validni API ključ prolazi autentifikaciju"""
+        """Test that valid API key passes authentication"""
         from src.auth import validate_api_key
         
         with patch("builtins.open", mock_keys_file):
@@ -34,7 +34,7 @@ class TestAuthMiddleware:
     
     @pytest.mark.asyncio
     async def test_invalid_api_key_should_fail(self, mock_keys_file):
-        """Test da nevalidni API ključ ne prolazi autentifikaciju"""
+        """Test that invalid API key fails authentication"""
         from src.auth import validate_api_key
         
         with patch("builtins.open", mock_keys_file):
@@ -42,11 +42,11 @@ class TestAuthMiddleware:
                 await validate_api_key("invalid-key-123")
             
             assert exc_info.value.status_code == 401
-            assert "Nevaljan API ključ" in str(exc_info.value.detail)
+            assert "Invalid API key" in str(exc_info.value.detail)
     
     @pytest.mark.asyncio
     async def test_missing_api_key_should_fail(self, mock_keys_file):
-        """Test da nedostatak API ključa vraća grešku"""
+        """Test that missing API key returns error"""
         from src.auth import validate_api_key
         
         with patch("builtins.open", mock_keys_file):
@@ -57,7 +57,7 @@ class TestAuthMiddleware:
     
     @pytest.mark.asyncio
     async def test_none_api_key_should_fail(self, mock_keys_file):
-        """Test da None umesto API ključa vraća grešku"""
+        """Test that None instead of API key returns error"""
         from src.auth import validate_api_key
         
         with patch("builtins.open", mock_keys_file):
@@ -68,7 +68,7 @@ class TestAuthMiddleware:
     
     @pytest.mark.asyncio
     async def test_keys_file_not_found_should_fail(self):
-        """Test da nepostojanje keys.txt fajla vraća grešku"""
+        """Test that missing keys.txt file returns error"""
         from src.auth import validate_api_key
         
         with patch("builtins.open", side_effect=FileNotFoundError):
@@ -80,7 +80,7 @@ class TestAuthMiddleware:
     
     @pytest.mark.asyncio
     async def test_load_api_keys_success(self, valid_api_keys, mock_keys_file):
-        """Test uspešnog učitavanja API ključeva iz fajla"""
+        """Test successful loading of API keys from file"""
         from src.auth import load_api_keys
         
         with patch("builtins.open", mock_keys_file):
@@ -89,7 +89,7 @@ class TestAuthMiddleware:
     
     @pytest.mark.asyncio
     async def test_api_key_whitespace_handling(self, mock_keys_file):
-        """Test da se whitespace pravilno obrađuje u API ključevima"""
+        """Test that whitespace is properly handled in API keys"""
         keys_with_whitespace = mock_open(read_data="  key1  \n\n  key2  \n  ")
         from src.auth import load_api_keys
         
