@@ -3,12 +3,77 @@ Receipt scraper module for extracting data from Serbian tax authority receipts
 """
 import logging
 import re
+import hashlib
+import os
+from pathlib import Path
 from typing import Dict, Any, Optional
 from bs4 import BeautifulSoup
 import httpx
 from unidecode import unidecode
 
 logger = logging.getLogger("receipt_processor.scraper")
+
+# Cache configuration
+CACHE_DIR = Path(__file__).parent.parent / "cache"
+
+
+def get_url_hash(url: str) -> str:
+    """Generate SHA256 hash for URL"""
+    return hashlib.sha256(url.encode('utf-8')).hexdigest()
+
+
+def get_cache_path(url: str, extension: str) -> Path:
+    """Get cache file path for URL"""
+    url_hash = get_url_hash(url)
+    return CACHE_DIR / f"{url_hash}.{extension}"
+
+
+def get_content_extension(content_type: str) -> str:
+    """Determine file extension based on content type"""
+    if 'html' in content_type.lower():
+        return 'html'
+    elif 'json' in content_type.lower():
+        return 'json'
+    else:
+        return 'txt'
+
+
+def read_from_cache(url: str) -> Optional[str]:
+    """Read cached content if available"""
+    try:
+        # Try different extensions
+        for ext in ['html', 'json', 'txt']:
+            cache_path = get_cache_path(url, ext)
+            if cache_path.exists():
+                with open(cache_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                logger.info(f"Cache hit for URL: {url[:50]}... (file: {cache_path.name})")
+                return content
+        
+        logger.debug(f"Cache miss for URL: {url[:50]}...")
+        return None
+        
+    except Exception as e:
+        logger.warning(f"Error reading from cache: {e}")
+        return None
+
+
+def write_to_cache(url: str, content: str, content_type: str) -> None:
+    """Write content to cache"""
+    try:
+        # Ensure cache directory exists
+        CACHE_DIR.mkdir(exist_ok=True)
+        
+        extension = get_content_extension(content_type)
+        cache_path = get_cache_path(url, extension)
+        
+        with open(cache_path, 'w', encoding='utf-8') as f:
+            f.write(content)
+        
+        logger.info(f"Cached content for URL: {url[:50]}... (file: {cache_path.name})")
+        
+    except Exception as e:
+        logger.warning(f"Error writing to cache: {e}")
 
 # Cyrillic to Latin mapping for Serbian
 CYRILLIC_TO_LATIN = {
@@ -60,11 +125,24 @@ def normalize_key(text: str) -> str:
 
 
 async def fetch_receipt_html(url: str) -> str:
-    """Fetch HTML content from receipt URL"""
+    """Fetch HTML content from receipt URL with caching"""
+    logger.info(f"Fetching receipt HTML from: {url[:50]}...")
+    
+    # Check cache first
+    cached_content = read_from_cache(url)
+    if cached_content:
+        return cached_content
+    
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.get(url)
             response.raise_for_status()
+            
+            # Get content type for proper caching
+            content_type = response.headers.get('content-type', 'text/html')
+            
+            # Cache the response
+            write_to_cache(url, response.text, content_type)
             
             logger.info(f"Successfully fetched receipt HTML from: {url[:50]}...")
             return response.text
