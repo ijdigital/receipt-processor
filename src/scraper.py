@@ -122,6 +122,9 @@ def extract_zahtev_fiskalizacija(soup: BeautifulSoup) -> Dict[str, Any]:
             'Град': r'Град[\s:]*([^\n]+)',
             'Општина': r'Општина[\s:]*([^\n]+)',
             'Купац': r'Купац[\s:]*([^\n]+)',
+            'ИД купца': r'ИД.*купца[\s:]*([^\n]+)',
+            'Затражио': r'Затражио[\s:]*([^\n]+)',
+            'Врста': r'Врста[\s:]*([^\n]+)',
             'Идентификатор захтева': r'Идентификатор.*захтева[\s:]*([^\n]+)',
             'Врста промета': r'Врста.*промета[\s:]*([^\n]+)',
         }
@@ -143,7 +146,7 @@ def extract_zahtev_fiskalizacija(soup: BeautifulSoup) -> Dict[str, Any]:
                     label = cells[0].get_text().strip()
                     value = cells[1].get_text().strip()
                     
-                    if any(keyword in label for keyword in ['ПИБ', 'Име', 'Адреса', 'Град']):
+                    if any(keyword in label for keyword in ['ПИБ', 'Име', 'Адреса', 'Град', 'ИД', 'Затражио', 'Врста']):
                         key = normalize_key(label)
                         zahtev_data[key] = transliterate_serbian(value)
         
@@ -165,9 +168,15 @@ def extract_rezultat_fiskalizacije(soup: BeautifulSoup) -> Dict[str, Any]:
             'Укупан износ': r'Укупан.*износ[\s:]*([0-9,.]+)',
             'Бројач промета': r'Бројач.*промета[\s:]*(\d+)',
             'Укупан бројач': r'Укупан.*бројач[\s:]*(\d+)',
+            'Бројач по врсти трансакције': r'Бројач.*по.*врсти.*трансакције[\s:]*([^\n]+)',
+            'Бројач укупног броја': r'Бројач.*укупног.*броја[\s:]*([^\n]+)',
+            'Екстензија бројача рачуна': r'Екстензија.*бројача.*рачуна[\s:]*([^\n]+)',
             'Проширење бројача': r'Проширење.*бројача[\s:]*([^\n]+)',
+            'Затражио - Потписао - Бројач': r'Затражио.*Потписао.*Бројач[\s:]*([^\n]+)',
             'Захтев-Потписан-Бројач': r'Захтев.*Потписан.*Бројач[\s:]*([^\n]+)',
-            'Време сервера': r'Време.*сервера[\s:]*([^\n]+)',
+            'Потписао': r'Потписао[\s:]*([^\n]+)',
+            'ПФР време': r'ПФР.*време[\s:]*([^\n\)]+)',
+            'Време сервера': r'Време.*сервера[\s:]*([^\n\)]+)',
         }
         
         html_text = soup.get_text()
@@ -177,6 +186,13 @@ def extract_rezultat_fiskalizacije(soup: BeautifulSoup) -> Dict[str, Any]:
             if match:
                 key = normalize_key(field_name)
                 value = transliterate_serbian(match.group(1).strip())
+                
+                # Clean up parentheses and extra whitespace for time fields
+                if 'време' in field_name.lower() or 'vreme' in key:
+                    # Remove parentheses and clean up
+                    value = re.sub(r'\([^)]*\)', '', value).strip()
+                    value = re.sub(r'\s+', ' ', value).strip()
+                
                 rezultat_data[key] = value
         
         # Also look in table structures
@@ -187,9 +203,16 @@ def extract_rezultat_fiskalizacije(soup: BeautifulSoup) -> Dict[str, Any]:
                     label = cells[0].get_text().strip()
                     value = cells[1].get_text().strip()
                     
-                    if any(keyword in label for keyword in ['Укупан', 'Бројач', 'Време']):
+                    if any(keyword in label for keyword in ['Укупан', 'Бројач', 'Време', 'Потписао', 'ПФР', 'Екстензија']):
                         key = normalize_key(label)
-                        rezultat_data[key] = transliterate_serbian(value)
+                        clean_value = transliterate_serbian(value)
+                        
+                        # Clean up parentheses for time fields
+                        if 'време' in label.lower() or 'vreme' in key:
+                            clean_value = re.sub(r'\([^)]*\)', '', clean_value).strip()
+                            clean_value = re.sub(r'\s+', ' ', clean_value).strip()
+                        
+                        rezultat_data[key] = clean_value
         
         logger.debug(f"Extracted rezultat section: {rezultat_data}")
         return rezultat_data
