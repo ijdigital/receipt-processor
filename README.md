@@ -2,6 +2,8 @@
 
 A FastAPI-based web service for processing and extracting structured data from Serbian tax authority receipts (suf.purs.gov.rs). This API scrapes receipt data, converts Cyrillic text to Latin script, normalizes field names, and stores results in a PostgreSQL database.
 
+> **Note**: This project was created as a demonstration of using Claude Code for AI-assisted software development. While the Serbian tax authority API supports JSON responses via `Accept: application/json` header, this implementation intentionally uses HTML parsing to showcase AI capabilities in complex data extraction and software development workflows.
+
 ## Features
 
 - **Receipt Data Extraction**: Scrapes and parses receipt data from Serbian tax authority URLs
@@ -244,6 +246,14 @@ curl -H "X-API-Key: your-key" \
 curl -H "X-API-Key: your-key" \
   "http://localhost:8000/api/receipts/receipt-uuid"
 ```
+
+### Alternative JSON API Approach
+> **Note**: The Serbian tax authority also supports direct JSON responses. For production use, you could bypass HTML parsing by adding the `Accept: application/json` header:
+> ```bash
+> curl "https://suf.purs.gov.rs/v/?vl=..." \
+>   -H "Accept: application/json"
+> ```
+> This project intentionally uses HTML parsing to demonstrate AI-assisted development capabilities and complex data extraction techniques.
 
 ## Configuration
 
